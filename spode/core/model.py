@@ -7,8 +7,8 @@ import os
 from collections import OrderedDict
 import importlib
 
-# import spode.core.const as const
-import const
+import spode.core.const as const
+# import const
 
 model_json_name = 'model.json'
 all_model_names = ['WaveGuide', 'PhaseShift', 'DirectionalCoupler', 'TBUm']
