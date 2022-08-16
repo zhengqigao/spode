@@ -1,6 +1,6 @@
-![](docs/figs/podis_logo_v0.png)
+![](docs/figs/spode_logo_v0.png)
 
-Podis is an opensource differentiable simulator specialized for programmable photonics. 
+Spode is an opensource differentiable simulator specialized for programmable photonics. 
 
 ## Installation
 
