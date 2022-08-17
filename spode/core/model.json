@@ -1,6 +1,7 @@
 [
     {
         "model_name":"wg",
+        "class_name":"WaveGuide",
         "required_attr":[
             "L",
             "neff"
@@ -21,6 +22,7 @@
     },
     {
         "model_name":"ps",
+        "class_name":"PhaseShift",
         "required_attr":[
             "ps"
         ],
@@ -35,6 +37,7 @@
     },
     {
         "model_name":"dc",
+        "class_name":"DirectionalCoupler",
         "required_attr":[
             "cp_angle"
         ],
@@ -52,6 +55,63 @@
     },
     {
         "model_name":"tbum",
+        "class_name":"TBUm",
+        "required_attr":[
+            "theta",
+            "phi",
+            "L",
+            "neff"
+        ],
+        "optional_attr":[
+            "ng",
+            "wl",
+            "alpha",
+            "cp_left",
+            "cp_right"
+        ],
+        "differential_attr":[
+            "theta",
+            "phi",
+            "L",
+            "cp_left",
+            "cp_right"
+        ],
+        "num_port":[
+            2,
+            2
+        ]
+    },
+    {
+        "model_name":"tbuo",
+        "class_name":"TBUo",
+        "required_attr":[
+            "theta",
+            "phi",
+            "L",
+            "neff"
+        ],
+        "optional_attr":[
+            "ng",
+            "wl",
+            "alpha",
+            "cp_left",
+            "cp_right"
+        ],
+        "differential_attr":[
+            "theta",
+            "phi",
+            "L",
+            "cp_left",
+            "cp_right"
+        ],
+        "num_port":[
+            2,
+            2
+        ]
+    },
+    {
+        "model_name":"tbut",
+        "class_name":"TBUt",
         "required_attr":[
             "theta",
             "phi",

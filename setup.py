@@ -11,6 +11,7 @@ setup(
         long_description_content_type='text/markdown',
         install_requires = ['numpy'],
         license = 'GPL-3.0',
+        package_data ={'spode': ['core/model.json']},
         python_requires='>=3',
         packages=find_packages()
 )
