@@ -3,7 +3,7 @@
         "model_name":"wg",
         "class_name":"WaveGuide",
         "required_attr":[
-            "L",
+            "l",
             "neff"
         ],
         "optional_attr":[
@@ -12,7 +12,7 @@
             "alpha"
         ],
         "differential_attr":[
-            "L",
+            "l",
             "alpha"
         ],
         "num_port":[
@@ -59,7 +59,7 @@
         "required_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "neff"
         ],
         "optional_attr":[
@@ -72,7 +72,7 @@
         "differential_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "cp_left",
             "cp_right"
         ],
@@ -87,7 +87,7 @@
         "required_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "neff"
         ],
         "optional_attr":[
@@ -100,7 +100,7 @@
         "differential_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "cp_left",
             "cp_right"
         ],
@@ -115,7 +115,7 @@
         "required_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "neff"
         ],
         "optional_attr":[
@@ -128,7 +128,7 @@
         "differential_attr":[
             "theta",
             "phi",
-            "L",
+            "l",
             "cp_left",
             "cp_right"
         ],
