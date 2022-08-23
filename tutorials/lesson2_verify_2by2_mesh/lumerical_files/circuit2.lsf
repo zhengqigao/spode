@@ -1,0 +1,76 @@
+clc;clear;
+load("circuit2.icp");
+switchtodesign;
+#### parameter configuration of the ppic ####
+num_compound = 12; # number of three branches at the top schematic
+top_name_preffix = 'COMPOUND_'; # name prefix in ::Root Element
+bottom_cp_list = {'C_1', 'C_2'}; # device name for couplers in the bottom level 
+bottom_ps_list = {'PHS_1', 'PHS_2'}; # device name for phase shifter in the bottom level
+bottom_wg_list = {'WGD_1','WGD_2'};
+
+######### initialization
+ps_init = [0.5*pi, 0.0*pi]; # same length as bottom_ps_list
+
+wrk1 = sin(0.25*pi+0.02*pi);
+wrk2 = sin(0.25*pi-0.01*pi);
+wrk1 = wrk1 * wrk1;
+wrk2 = wrk2 * wrk2; 
+couple_coeff_init = [wrk1, wrk2]; # same length as bottom_cp_list
+
+ng = 4.0;
+neff = 2.35;
+wg_l = 250e-6;
+loss = 1782.11; # corresponds to alpha=0.95 in our code
+
+for (i=1:num_compound){
+        # initialize couplers
+        for (m=1:length(bottom_cp_list)){
+              wrk_name = top_name_preffix + num2str(i) + "::" + bottom_cp_list{m};
+              print(wrk_name);              
+              select(wrk_name);
+              set("coupling coefficient 1", couple_coeff_init(m));           
+            } 
+        # initialize phase shifters
+        for (m=1:length(bottom_ps_list)){
+              wrk_name = top_name_preffix + num2str(i) + "::" + bottom_ps_list{m};
+              print(wrk_name);              
+              select(wrk_name);
+              set("phase shift", ps_init(m));           
+          }  
+        # initialize phase shifters
+        for (m=1:length(bottom_wg_list)){
+              wrk_name = top_name_preffix + num2str(i) + "::" + bottom_wg_list{m};
+              print(wrk_name);              
+              select(wrk_name);
+              set("length", wg_l);
+              set("effective index 1", neff);
+              set("group index 1", ng);
+              set("loss 1", loss);           
+          } 
+  
+}
+
+##### Make the test case more complicated
+select("COMPOUND_2::PHS_1");
+set("phase shift",0.5*pi-0.02*pi);
+select("COMPOUND_2::PHS_2");
+set("phase shift",0.0*pi+0.02*pi);
+
+select("COMPOUND_8::PHS_1");
+set("phase shift",0.5*pi-0.01*pi);
+select("COMPOUND_8::PHS_2");
+set("phase shift",0.0*pi+0.01*pi);
+
+select("COMPOUND_3::PHS_1");
+set("phase shift",0.5*pi-0.03*pi);
+select("COMPOUND_3::PHS_2");
+set("phase shift",0.0*pi+0.03*pi);
+
+select("COMPOUND_10::PHS_1");
+set("phase shift",0.5*pi-0.04*pi);
+select("COMPOUND_10::PHS_2");
+set("phase shift",0.0*pi+0.04*pi);
+
+
+
+
