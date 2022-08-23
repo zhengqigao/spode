@@ -58,6 +58,16 @@ class Circuit(object):
         with open(_model_json_name, 'r') as f:
             self.info = json.load(f)
 
+        self._preprocess()
+
+    def _preprocess(self):
+        """Preprocess at the end of initialization
+
+        We need to preprocess at the end of initialization to do some checking, and generate some useful variables. For
+        details, please refer to each of the used functions. Moreover, this _preprocess function needs to be called after
+        calling update_attr().
+
+        """
         self.deri_vari_dict = self._deri_vari_processing()
         self.node2ind, self.ind2node, self.node_element, self.inward_node, self.outward_node = self._node_processing()
 
@@ -333,7 +343,7 @@ class Circuit(object):
 
         return returned_res, returned_grads
 
-    def update_attr(self, update_attr: str, value: Any, key_strings: Optional[str] = None):
+    def update_attr(self, update_attr: str, new_value: Any, key_strings: Optional[str] = None):
         """Update the attributes of the circuit
 
         Update the specified attribute with a provided new value. Since the Circuit class has both dict (even nested dict)
@@ -345,17 +355,21 @@ class Circuit(object):
         circuit_instance.update_attr('circuit_element', 0.3 * np.pi, key_strings='ps1::ps')
 
         :param update_attr: the attribute that will be updated.
-        :param value: the new value of the attribute.
+        :param new_value: the new value of the attribute.
         :param key_strings: It specify the key, if the updated attribute is a dict.
         """
-        update_attr, key_strings = update_attr.lower(), key_strings.lower()
+        update_attr = update_attr.lower()
 
         cur_value = getattr(self, update_attr)
         if isinstance(cur_value, dict):
-            key_strings = key_strings.split("::")
-            reduce(operator.getitem, key_strings[:-1], cur_value)[key_strings[-1]] = value
+            key_strings = key_strings.lower().split("::")
+            reduce(operator.getitem, key_strings[:-1], cur_value)[key_strings[-1]] = new_value
+            setattr(self, update_attr, cur_value)
+        else:
+            setattr(self, update_attr, new_value)
 
-        setattr(self, update_attr, cur_value)
+        # if the node or derivative variable is updated, we need to call _preprocess().
+        self._preprocess()
 
     def get_attr(self, get_attr: str, key_strings: Optional[str] = None) -> Any:
         """Get the current value of some attribute.
@@ -369,11 +383,11 @@ class Circuit(object):
         :param: key_strings: If the desired attribute is the value in a dict, the key needs to be provided.
         :return: the value of the attribute.
         """
-        get_attr, key_strings = get_attr.lower(), key_strings.lower()
+        get_attr = get_attr.lower()
 
         cur_value = getattr(self, get_attr)
         if isinstance(cur_value, dict):
-            key_strings = key_strings.split("::")
+            key_strings = key_strings.lower().split("::")
             return reduce(operator.getitem, key_strings, cur_value)
         return cur_value
 
