@@ -1,8 +1,8 @@
 ![](docs/figs/spode_logo_v0.png)
 
-Spode is an opensource differentiable simulator specialized for programmable photonics. It is currently under active developement.
+Spode is an opensource differentiable simulator specialized for programmable photonics. **It is currently under active development.**
 
-## Installation
+## Installationß
 
 ```
 pip install spode
