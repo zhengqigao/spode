@@ -9,7 +9,6 @@ import os
 
 import spode.core.const as const
 
-
 # the model json file. It will be used as reference when parsing the circuit from a netlist file
 _model_json_name = os.path.join(os.path.dirname(__file__), 'model.json')
 
@@ -79,6 +78,8 @@ class GeneralModel(object, metaclass=ABCMeta):
         Attributes:
             params: the circuit model parameters and the associated values in the format of key-value pair.
         """
+
+        kwargs = eval(repr(kwargs).lower()) # make every string in kwargs lower case.
 
         self.params = {}
 
@@ -169,7 +170,7 @@ class WaveGuide(GeneralModel):
     """The class definition of a waveguide model."""
 
     ### Model parameters meaning ###
-    # L (m): waveguide length
+    # l (m): waveguide length
     # neff: effective index of the propagating model
     # ng: group index
     # wl (m): the free space wavelength where neff and ng are provided.
@@ -177,17 +178,19 @@ class WaveGuide(GeneralModel):
     ################################
 
     _name = 'wg'
-    _required_attr = ['L', 'neff']
+    _required_attr = ['l', 'neff']
     _optional_attr = {'ng': 0, 'wl': None, 'alpha': 1.0}
-    _differential_attr = ['L', 'alpha']
+    _differential_attr = ['l', 'alpha']
     _num_port = [1, 1]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         # Inheriting the initialization method, but need to deal with ng.
-        if 'ng' in kwargs.keys():
-            self.params['ng'] = kwargs['ng']
+        for key, value in kwargs.items():
+            if key.lower() == 'ng':
+                self.params['ng'] = value
+                break
         else:
             self.params['ng'] = self.params['neff']
 
@@ -199,17 +202,17 @@ class WaveGuide(GeneralModel):
 
         # linearly approximate the effective index neff
         neff_func = _neff(self.params['neff'], self.params['ng'], self.params['wl'])
-        beta = (omega * neff_func(omega) / const.FreeLightSpeed).reshape(-1,1,1)  # propagation constant
+        beta = (omega * neff_func(omega) / const.FreeLightSpeed).reshape(-1, 1, 1)  # propagation constant
 
         # define and reshape the Smatrix to the correct shape (len(omega), self._num_port[0], self._num_port[1])
         # This model doesn't use the variable direction.
-        Smatrix = self.params['alpha'] * np.exp(1.j * beta * self.params['L']).reshape(-1, 1, 1)
+        Smatrix = self.params['alpha'] * np.exp(1.j * beta * self.params['l'])
 
         if deri_vari is not None:
             grad = {}
 
-            if 'L' in deri_vari:
-                grad['L'] = 1.j * beta * Smatrix
+            if 'l' in deri_vari:
+                grad['l'] = 1.j * beta * Smatrix
 
             if 'alpha' in deri_vari:
                 grad['alpha'] = 1.0 / self.params['alpha'] * Smatrix
@@ -306,16 +309,23 @@ class DirectionalCoupler(GeneralModel):
 
 class TBUm(GeneralModel):
     """The class definition of a tunable basic unit (tbu) model with all phase shifts in the middle."""
-    #TODO: add paper refernce, who uses this model.
+    # TODO: add paper reference, who uses this model.
 
     _name = 'tbum'
-    _required_attr = ['theta', 'phi', 'L', 'neff']
+    _required_attr = ['theta', 'phi', 'l', 'neff']
     _optional_attr = {'ng': 0, 'wl': None, 'alpha': 1.0, 'cp_left': 0.25 * np.pi, 'cp_right': 0.25 * np.pi}
-    _differential_attr = ['theta', 'phi', 'L', 'cp_left', 'cp_right']
+    _differential_attr = ['theta', 'phi', 'l', 'cp_left', 'cp_right']
     _num_port = [2, 2]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        for key, value in kwargs.items():
+            if key.lower() == 'ng':
+                self.params['ng'] = value
+                break
+        else:
+            self.params['ng'] = self.params['neff']
 
     def get_smatrix(self,
                     omega: Union[list, np.ndarray],
@@ -325,7 +335,7 @@ class TBUm(GeneralModel):
 
         # linearly approximate the effective index neff
         neff_func = _neff(self.params['neff'], self.params['ng'], self.params['wl'])
-        beta = omega * neff_func(omega) / const.FreeLightSpeed  # propagation constant
+        beta = (omega * neff_func(omega) / const.FreeLightSpeed).reshape(-1, 1, 1)  # propagation constant
 
         # define and reshape the Smatrix to the correct shape (len(omega), self._num_port[0], self._num_port[1])
 
@@ -359,7 +369,7 @@ class TBUm(GeneralModel):
                           "Automatically use 'direction'='l2r'. This might lead to error, if the "
                           "two directional couplers in the {} are not identical.".format(self._name))
 
-        S_wg = (np.exp(1.j * beta * self.params['L']) * self.params['alpha']).reshape(-1, 1, 1)
+        S_wg = (np.exp(1.j * beta * self.params['l']) * self.params['alpha'])
 
         Smatrix = S_wg * np.expand_dims(S, axis=0).repeat(len(omega), axis=0)
 
@@ -375,12 +385,13 @@ class TBUm(GeneralModel):
             if 'alpha' in deri_vari:
                 grad['alpha'] = Smatrix / self.params['alpha']
 
-            if 'L' in deri_vari:
-                grad['L'] = Smatrix * 1.j * beta
+            if 'l' in deri_vari:
+                grad['l'] = Smatrix * 1.j * beta
 
             return Smatrix, grad
         else:
             return Smatrix
+
 
 class TBUo(GeneralModel):
     """The class definition of a tunable basic unit (tbu) model with phase shifts in the middle and right,
@@ -392,13 +403,20 @@ class TBUo(GeneralModel):
     """
 
     _name = 'tbuo'
-    _required_attr = ['theta', 'phi', 'L', 'neff']
+    _required_attr = ['theta', 'phi', 'l', 'neff']
     _optional_attr = {'ng': 0, 'wl': None, 'alpha': 1.0, 'cp_left': 0.25 * np.pi, 'cp_right': 0.25 * np.pi}
-    _differential_attr = ['theta', 'phi', 'L', 'cp_left', 'cp_right']
+    _differential_attr = ['theta', 'phi', 'l', 'cp_left', 'cp_right']
     _num_port = [2, 2]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        for key, value in kwargs.items():
+            if key.lower() == 'ng':
+                self.params['ng'] = value
+                break
+        else:
+            self.params['ng'] = self.params['neff']
 
     def get_smatrix(self,
                     omega: Union[list, np.ndarray],
@@ -408,7 +426,7 @@ class TBUo(GeneralModel):
 
         # linearly approximate the effective index neff
         neff_func = _neff(self.params['neff'], self.params['ng'], self.params['wl'])
-        beta = omega * neff_func(omega) / const.FreeLightSpeed  # propagation constant
+        beta = (omega * neff_func(omega) / const.FreeLightSpeed).reshape(-1, 1, 1)  # propagation constant
 
         # define and reshape the Smatrix to the correct shape (len(omega), self._num_port[0], self._num_port[1])
 
@@ -445,7 +463,7 @@ class TBUo(GeneralModel):
                           "Automatically use 'direction'='l2r'. This might lead to error, if the "
                           "two directional couplers in the {} are not identical.".format(self._name))
 
-        S_wg = (np.exp(1.j * beta * self.params['L']) * self.params['alpha']).reshape(-1, 1, 1)
+        S_wg = (np.exp(1.j * beta * self.params['l']) * self.params['alpha'])
 
         Smatrix = S_wg * np.expand_dims(S, axis=0).repeat(len(omega), axis=0)
 
@@ -461,12 +479,13 @@ class TBUo(GeneralModel):
             if 'alpha' in deri_vari:
                 grad['alpha'] = Smatrix / self.params['alpha']
 
-            if 'L' in deri_vari:
-                grad['L'] = Smatrix * 1.j * beta
+            if 'l' in deri_vari:
+                grad['l'] = Smatrix * 1.j * beta
 
             return Smatrix, grad
         else:
             return Smatrix
+
 
 class TBUt(GeneralModel):
     """The class definition of a tunable basic unit (tbu) model with phase shifts in the middle and right,
@@ -475,13 +494,20 @@ class TBUt(GeneralModel):
     # TODO: add paper reference, who uses this model.
 
     _name = 'tbut'
-    _required_attr = ['theta', 'phi', 'L', 'neff']
+    _required_attr = ['theta', 'phi', 'l', 'neff']
     _optional_attr = {'ng': 0, 'wl': None, 'alpha': 1.0, 'cp_left': 0.25 * np.pi, 'cp_right': 0.25 * np.pi}
-    _differential_attr = ['theta', 'phi', 'L', 'cp_left', 'cp_right']
+    _differential_attr = ['theta', 'phi', 'l', 'cp_left', 'cp_right']
     _num_port = [2, 2]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        for key, value in kwargs.items():
+            if key.lower() == 'ng':
+                self.params['ng'] = value
+                break
+        else:
+            self.params['ng'] = self.params['neff']
 
     def get_smatrix(self,
                     omega: Union[list, np.ndarray],
@@ -491,7 +517,7 @@ class TBUt(GeneralModel):
 
         # linearly approximate the effective index neff
         neff_func = _neff(self.params['neff'], self.params['ng'], self.params['wl'])
-        beta = omega * neff_func(omega) / const.FreeLightSpeed  # propagation constant
+        beta = (omega * neff_func(omega) / const.FreeLightSpeed).reshape(-1, 1, 1)  # propagation constant
 
         # define and reshape the Smatrix to the correct shape (len(omega), self._num_port[0], self._num_port[1])
 
@@ -528,7 +554,7 @@ class TBUt(GeneralModel):
                           "Automatically use 'direction'='l2r'. This might lead to error, if the "
                           "two directional couplers in the {} are not identical.".format(self._name))
 
-        S_wg = (np.exp(1.j * beta * self.params['L']) * self.params['alpha']).reshape(-1, 1, 1)
+        S_wg = np.exp(1.j * beta * self.params['l']) * self.params['alpha']
 
         Smatrix = S_wg * np.expand_dims(S, axis=0).repeat(len(omega), axis=0)
 
@@ -544,14 +570,15 @@ class TBUt(GeneralModel):
             if 'alpha' in deri_vari:
                 grad['alpha'] = Smatrix / self.params['alpha']
 
-            if 'L' in deri_vari:
-                grad['L'] = Smatrix * 1.j * beta
+            if 'l' in deri_vari:
+                grad['l'] = Smatrix * 1.j * beta
 
             return Smatrix, grad
         else:
             return Smatrix
 
-def reset_model_json() -> bool:
+
+def reset_model_json():
     """Reset the model json file to only reflect the built-in models defined in this file."""
     info_list = []
     module = importlib.import_module("spode.core.model")
@@ -564,10 +591,8 @@ def reset_model_json() -> bool:
 
     print("model.json file has been reset to default successfully.")
 
-    return True
 
-
-def register_model(model: Type[GeneralModel]) -> bool:
+def register_model(model: Type[GeneralModel]):
     """Register a user-defined model to the model.json file.
 
     Since the provided netlist will be parsed according to the model.json file. This function will correctly register
@@ -575,14 +600,19 @@ def register_model(model: Type[GeneralModel]) -> bool:
 
     :param model: The name of the class (e.g., WaveGuide, TBUm).
     """
+    if not model._name.islower():
+        raise RuntimeError("The user-defined model has _name = '%s'. Please use lower case." %(model._name))
+
     # check if the class name or the _name is used by other already defined models
     module = importlib.import_module("spode.core.model")
     for defined_model in _all_class_names:
         defined_class = getattr(module, defined_model)
-        if model.__name__.lower() == defined_class.__name__.lower():
-            raise RuntimeError("The class name %s is already used" % defined_class.__name__)
-        if model._name.lower() == defined_class._name.lower():
-            raise RuntimeError("The model name %s is already used" % defined_class._name)
+        if model.__name__.lower().startswith(defined_class.__name__.lower()) or \
+                defined_class.__name__.lower().startswith(model.__name__.lower()):
+            raise RuntimeError("The class name '%s' is already used in '%s'." % (model.__name__, defined_class.__name__))
+        if model._name.lower().startswith(defined_class._name.lower()) or \
+                defined_class._name.lower().startswith(model._name.lower()):
+            raise RuntimeError("The model name '%s' is already used in '%s'." % (model._name, defined_class._name))
 
     with open(_model_json_name, 'r') as f:
         info = json.load(f)
@@ -592,8 +622,7 @@ def register_model(model: Type[GeneralModel]) -> bool:
     with open(_model_json_name, 'w') as f:
         json.dump(info, f, indent=4, separators=(',', ':'))
 
-    print("The new model '%s' has been added successfully." % (model.__name__))
-    return True
+    print("The new class '%s' has been added successfully." % (model.__name__))
 
 
 if __name__ == '__main__':
@@ -601,7 +630,7 @@ if __name__ == '__main__':
           "If you insist, it will do a testing run.")
 
     omega = np.linspace(0, 10, 10)
-    wg = WaveGuide(L=3., neff=2.)
+    wg = WaveGuide(l=3., neff=2.)
     wg.print_allattr()
     S1 = wg.get_smatrix(omega)
     print(S1.shape)
@@ -619,7 +648,7 @@ if __name__ == '__main__':
     print(S3.shape)
     print('---')
 
-    tbum = TBUm(**{'theta': 0., 'phi': 0., 'L': 250e-6, 'neff': 2.35})
+    tbum = TBUm(**{'theta': 0., 'phi': 0., 'l': 250e-6, 'neff': 2.35})
     tbum.print_allattr()
     S4 = tbum.get_smatrix(omega)
     print(S4.shape)
