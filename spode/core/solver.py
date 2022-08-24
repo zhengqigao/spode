@@ -17,7 +17,7 @@ class Circuit(object):
 
     def __init__(self, circuit_element: dict, mode_info: dict, omega: Union[List[float], np.ndarray],
                  srce_node: dict, prob_node: List[str],
-                 deri_node: Optional = None, deri_vari: Optional = None):
+                 deri_node: Optional = None, deri_vari: Optional = None, notation: Optional[str] = ''):
         """Initialize the Circuit class.
 
         The Circuit object takes a few parameters as input, and then initialize its attributes. In the meanwhile, we will
@@ -53,6 +53,7 @@ class Circuit(object):
         self.prob_node = eval(repr(prob_node).lower())
         self.deri_node = eval(repr(deri_node).lower())
         self.deri_vari = eval(repr(deri_vari).lower())
+        self.notation = eval(repr(notation).lower())
 
         # The Circuit instance needs re-initialization after calling register_model(), so that self.info could be updated.
         with open(_model_json_name, 'r') as f:
@@ -120,7 +121,8 @@ class Circuit(object):
             if self._check_name(key, 'model_name', 'startswith'):
                 if key not in self.circuit_element.keys():
                     raise RuntimeError(
-                        "The element named '%s' (required by '%s') doesn't present in the circuit (i.e., circuit_element)." % (key, cur_deri_vari))
+                        "The element named '%s' (required by '%s') doesn't present in the circuit (i.e., circuit_element)." % (
+                        key, cur_deri_vari))
                 elif key not in deri_dict.keys():
                     # We postpone the checking of whether 'value' exists to when we calculate the derivative.
                     deri_dict[key] = [value]
@@ -320,7 +322,11 @@ class Circuit(object):
                 raise RuntimeError("The model %s is not defined in the simulator. Check if there is a typo, "
                                    "or define the model by yourself." % (ele))
 
-        invA = np.linalg.inv(A)
+        try:
+            invA = np.linalg.inv(A)
+        except:
+            raise RuntimeError("Solving the system matrix fails. Please check the provided netlist.")
+
         response = np.matmul(invA, b)
 
         returned_res = np.zeros([len(self.prob_node), len(self.omega), 2], dtype=np.complex_)

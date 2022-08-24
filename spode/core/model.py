@@ -129,7 +129,7 @@ class GeneralModel(object, metaclass=ABCMeta):
         """
         return self.params[attr]
 
-    def print_allattr(self) -> None:
+    def print_attr(self) -> None:
         """Print the values of all attributes defined in the circuit model.
 
         :return: None
