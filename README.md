@@ -28,7 +28,7 @@ from spode.util import Generator
 from spode.core import Circuit
 import numpy as np
 
-# generator instance for a 2 by2 square mesh
+# generator instance for a 2 by 2 square mesh
 # initialize all TBUs in the circuit
 
 generator = Generator('square_1', size = [2, 2])
@@ -48,6 +48,10 @@ circuit = Circuit(
                   deri_vari=['']) 
                   
 response, grads = circuit.solve() 
+
+# Shapes by pseudo code:
+# response.shape = (len(prob_node), len(omega), 2)
+# grads.shape = (len(deri_node), len(deri_vari), len(omega), 2)
 ```
 
 ## Tutorials
