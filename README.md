@@ -31,17 +31,17 @@ import numpy as np
 # generator instance for a 2 by 2 square mesh
 # initialize all TBUs in the circuit
 
-generator = Generator('square_1', size = [2, 2])
+generator = Generator()
 init_dict = {'theta': 0.0, 'phi': 0.0, 'l': 250e-6}
-circuit_element = generator.generate(init_dict)
+circuit_element = generator.generate('square_1', [2, 2], init_dict)
 
  
 # define the circuit instance and run the simulation
 
 circuit = Circuit(
                   circuit_element=circuit_element,
-                  mode_info={'neff':2.35},
-                  omega=np.linspace(192.5,193.5,1000) * 2 * np.pi,
+                  mode_info={'neff':2.35}, # effective index
+                  omega=np.linspace(192.5,193.5,1000) * 2 * np.pi, # [192.5Thz, 193.5Thz]
                   srce_node={'n_0#2_br': 1.0},
                   prob_node=['n_2#0_br'],
                   deri_node=['n_2#0_br'],

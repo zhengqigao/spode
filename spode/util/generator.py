@@ -27,27 +27,26 @@ def get_supported_config():
 class Generator(object):
     """Automatic programmable photonics circuit schematic generator"""
 
-    def __init__(self, config: str, size: List[int], tbu_model: Optional[str] = 'tbum'):
-        """Initialize the Generator according to a input configuration, and an input size.
+    def __init__(self):
+        pass
+
+    def generate(self, config: str, size: List[int], init_dict:dict, tbu_model: Optional[str] = 'tbum') -> dict:
+        """Generate the circuit netlist
+
+        Generate the circuit netlist based on self.config, self.size, and self.tbu_model.
 
         :param config: A string specify the configuration, e.g., 'square_1'.
         :param size: A list of integer specify the size of the programmable photonic circuit.
                      The length of it depends on the variable 'config'.1
+        :param init_dict: specify the initial values for all TBUs.
         :param tbu_model: specify which tbu model to use, e.g., 'tbum', 'tbuo', 'tbut'.
+        :return: a dict contains all circuit elements.
         """
 
         self.config = config
         self.size = size
         self.tbu_model = tbu_model
 
-    def generate(self, init_dict) -> dict:
-        """Generate the circuit netlist
-
-        Generate the circuit netlist based on self.config, self.size, and self.tbu_model.
-
-        :param init_dict: specify the initial values for all TBUs.
-        :return: a dict contains all circuit elements.
-        """
         if self.config not in _config_size_dict.keys():
             raise RuntimeError("The provided configuration is not supported for automatic schematic generation.")
         elif _config_size_dict[self.config][0] != len(self.size):
@@ -215,8 +214,8 @@ class Generator(object):
 
 if __name__ == '__main__':
     print("hello worlds")
-    a = Generator('triangular_1', [2, 2])
-    circuit_element = a.generate({'theta': 0.0 * np.pi, 'phi': 0.0 * np.pi, 'l': 250e-6})
+    a = Generator()
+    circuit_element = a.generate('triangular_1', [2, 2], {'theta': 0.0 * np.pi, 'phi': 0.0 * np.pi, 'l': 250e-6})
     print(circuit_element)
 
     print(circuit_element.keys())
