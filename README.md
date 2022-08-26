@@ -21,6 +21,35 @@ Spode is written in Python 3, with dependency on Numpy. It should be installed s
 pip install spode
 ```
 
+## A Friendly Example
+
+```
+from spode.util import Generator
+from spode.core import Circuit
+import numpy as np
+
+# generator instance for a 2 by2 square mesh
+# initialize all TBUs in the circuit
+
+generator = Generator('square_1', size = [2, 2])
+init_dict = {'theta': 0.0, 'phi': 0.0, 'l': 250e-6}
+circuit_element = generator.generate(init_dict)
+
+ 
+# define the circuit instance and run the simulation
+
+circuit = Circuit(
+                  circuit_element=circuit_element,
+                  mode_info={'neff':2.35},
+                  omega=np.linspace(192.5,193.5,1000) * 2 * np.pi,
+                  srce_node={'n_0#2_br': 1.0},
+                  prob_node=['n_2#0_br'],
+                  deri_node=['n_2#0_br'],
+                  deri_vari=['']) 
+                  
+response, grads = circuit.solve() 
+```
+
 ## Tutorials
 
 [Lesson 1: a tunable basic unit.](https://github.com/zhengqigao/spode/blob/main/tutorials/lesson1_verify_tbu/) We show how to use Spode to define a tunable basic unit (TBU), the building block of programmable photonics, and verify the simulation result by comparing with Lumerical Interconnect.
