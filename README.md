@@ -23,7 +23,7 @@ pip install spode
 
 ## A Friendly Example
 
-```
+```python
 from spode.util import Generator
 from spode.core import Circuit
 import numpy as np
