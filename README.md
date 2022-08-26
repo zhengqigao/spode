@@ -1,4 +1,4 @@
-![](docs/figs/spode_logo_v0.png)
+<img src="docs/figs/spode_logo_v0.png" width="400" align="center"/>
 
 Spode is an opensource differentiable simulator specialized for programmable photonics. **It is currently under active development.**
 
