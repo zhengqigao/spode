@@ -61,6 +61,8 @@ response, grads = circuit.solve()
 
 [Lesson 3: Automatic circuit generators.](https://github.com/zhengqigao/spode/tree/main/tutorials/lesson3_circuit_generator) We illustrate a few built-in circuit generators, which could be used in one-line manner to generate triangular, square, hexagonal mesh. We also introduce a systematic way to name the TBUs, ports presented in the circuit.
 
+[Lesson 4: Built-in visualization methods.](https://github.com/zhengqigao/spode/tree/main/tutorials/lesson4_visualization) We first illustrate the built-in visualization functions for triangular, square, hexagonal mesh. Then we explain how to visualize a customized topology by taking advantage of our provided functions.
+
 ## Contact and Bug Report
 
 If you find any bugs, or want a new feature, please open an issue, or contact me at zhengqi@mit.edu.
