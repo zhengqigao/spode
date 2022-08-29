@@ -32,9 +32,7 @@ class Circuit(object):
         :param deri_node: specify which port magnitude derivatives are of interests.
 
 
-        These attributes will be calculated based on the above given parameters. Moreover, in the calculation, we will do
-        some checking about the validity of the input parameters, in case of erroneous usage. Note that our checking might
-        not be comprehensive.
+        These attributes will be calculated based on the above given parameters. Moreover, in the calculation, we will do some checking about the validity of the input parameters, in case of erroneous usage. Note that our checking might not be comprehensive.
 
         info: information about all existing models (built-in and user-defined ones).
         deri_vari_dict: specify which attribute of which circuit element's will be calculated derivative w.r.t.
@@ -45,15 +43,17 @@ class Circuit(object):
         """
 
         # eval(repr().lower()) will convert every string to the corresponding lower case.
-
-        self.circuit_element = eval(repr(circuit_element).lower())
-        self.mode_info = eval(repr(mode_info).lower())
-        self.omega = omega
-        self.srce_node = eval(repr(srce_node).lower())
-        self.prob_node = eval(repr(prob_node).lower())
-        self.deri_node = eval(repr(deri_node).lower())
-        self.deri_vari = eval(repr(deri_vari).lower())
-        self.notation = eval(repr(notation).lower())
+        try:
+            self.circuit_element = eval(repr(circuit_element).lower())
+            self.mode_info = eval(repr(mode_info).lower())
+            self.omega = omega
+            self.srce_node = eval(repr(srce_node).lower())
+            self.prob_node = eval(repr(prob_node).lower())
+            self.deri_node = eval(repr(deri_node).lower())
+            self.deri_vari = eval(repr(deri_vari).lower())
+            self.notation = eval(repr(notation).lower())
+        except:
+            raise RuntimeError("The provided inputs to initialize Circuit instance are problematic.")
 
         # The Circuit instance needs re-initialization after calling register_model(), so that self.info could be updated.
         with open(_model_json_name, 'r') as f:

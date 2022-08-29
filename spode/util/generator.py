@@ -4,7 +4,7 @@ from math import floor
 
 from spode.core import Circuit
 
-__all__ = ['Generator', 'get_supported_config']
+__all__ = ['get_supported_config', 'generate']
 
 # stores all the supported configurations for automatic generation
 _config_size_dict = {'square_1': [2, 'A basic square mesh of size N by M. Two integers are needed to define this '
@@ -24,13 +24,28 @@ def get_supported_config():
     print("\n")
 
 
+def generate(config: str, size: List[int], init_dict: dict, tbu_model: Optional[str] = 'tbum'):
+    """Generate the circuit netlist
+
+    Generate the circuit netlist based on self.config, self.size, and self.tbu_model.
+
+    :param config: A string specify the configuration, e.g., 'square_1'.
+    :param size: A list of integer specify the size of the programmable photonic circuit.
+                 The length of it depends on the variable 'config'.1
+    :param init_dict: specify the initial values for all TBUs.
+    :param tbu_model: specify which tbu model to use, e.g., 'tbum', 'tbuo', 'tbut'.
+    :return: a dict contains all circuit elements.
+    """
+    return Generator().generate(config, size, init_dict, tbu_model)
+
+
 class Generator(object):
     """Automatic programmable photonics circuit schematic generator"""
 
     def __init__(self):
         pass
 
-    def generate(self, config: str, size: List[int], init_dict:dict, tbu_model: Optional[str] = 'tbum') -> dict:
+    def generate(self, config: str, size: List[int], init_dict: dict, tbu_model: Optional[str] = 'tbum') -> dict:
         """Generate the circuit netlist
 
         Generate the circuit netlist based on self.config, self.size, and self.tbu_model.
@@ -202,7 +217,8 @@ class Generator(object):
             # deal with horizontal TBUs
             for j in range(1, floor((self.size[1] - 1) / 2) + 2):
                 ind_j = 2 * j - 1
-                cur_tbu_model = self.tbu_model + '_' + str(i - 1) + '#' + str(ind_j + 1) + '_' + str(i) + '#' + str(ind_j) + '_h'
+                cur_tbu_model = self.tbu_model + '_' + str(i - 1) + '#' + str(ind_j + 1) + '_' + str(i) + '#' + str(
+                    ind_j) + '_h'
                 ln = ['n' + '_' + str(i - 1) + '#' + str(ind_j + 1) + '_' + magic_connect[2]['ln'][0],
                       'n' + '_' + str(i) + '#' + str(ind_j) + '_' + magic_connect[2]['ln'][1]]
                 rn = ['n' + '_' + str(i - 1) + '#' + str(ind_j + 1) + '_' + magic_connect[2]['rn'][0],

@@ -24,16 +24,15 @@ pip install spode
 ## A Friendly Example
 
 ```python
-from spode.util import Generator
+from spode.util import generate
 from spode.core import Circuit
 import numpy as np
 
 # generator instance for a 2 by 2 square mesh
 # initialize all TBUs in the circuit
 
-generator = Generator()
 init_dict = {'theta': 0.0, 'phi': 0.0, 'l': 250e-6}
-circuit_element = generator.generate('square_1', [2, 2], init_dict)
+circuit_element = generate('square_1', [2, 2], init_dict)
 
  
 # define the circuit instance and run the simulation
