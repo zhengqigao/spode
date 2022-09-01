@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='spode',
-        version='0.0.7',
+        version='0.0.8',
         description='A simulator with programmable photonics and differentiability emphasis',
         author='ZhengqiGao',
         author_email='zhenqi@mit.edu',

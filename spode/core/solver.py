@@ -4,8 +4,9 @@ import importlib
 import json
 from functools import reduce
 import operator
-
+from copy import deepcopy
 from spode.core.model import _model_json_name
+from spode.util.visual import _visualize_base, _cell_place_function_list
 
 __all__ = ['Circuit']
 
@@ -41,6 +42,8 @@ class Circuit(object):
         inward_node, outward_node: information about the inward and outward direction of the port of a circuit element.
 
         """
+
+        self.__node_signal = None
 
         # eval(repr().lower()) will convert every string to the corresponding lower case.
         try:
@@ -122,7 +125,7 @@ class Circuit(object):
                 if key not in self.circuit_element.keys():
                     raise RuntimeError(
                         "The element named '%s' (required by '%s') doesn't present in the circuit (i.e., circuit_element)." % (
-                        key, cur_deri_vari))
+                            key, cur_deri_vari))
                 elif key not in deri_dict.keys():
                     # We postpone the checking of whether 'value' exists to when we calculate the derivative.
                     deri_dict[key] = [value]
@@ -337,6 +340,8 @@ class Circuit(object):
             returned_res[i, :, 0] = response[:, 2 * node_ind, 0]
             returned_res[i, :, 1] = response[:, 2 * node_ind + 1, 0]
 
+        self.__node_signal = response # (len(omega), #nodes, 2)
+
         if not require_grads:
             return returned_res
 
@@ -349,7 +354,7 @@ class Circuit(object):
 
         return returned_res, returned_grads
 
-    def update_attr(self, update_attr: str, new_value: Any, key_strings: Optional[str] = None):
+    def update_attr(self, update_attr: str, new_value: Any, key_string: Optional[str] = None):
         """Update the attributes of the circuit
 
         Update the specified attribute with a provided new value. Since the Circuit class has both dict (even nested dict)
@@ -362,14 +367,14 @@ class Circuit(object):
 
         :param update_attr: the attribute that will be updated.
         :param new_value: the new value of the attribute.
-        :param key_strings: It specify the key, if the updated attribute is a dict.
+        :param key_string: It specify the key, if the updated attribute is a dict.
         """
         update_attr = update_attr.lower()
 
         cur_value = getattr(self, update_attr)
         if isinstance(cur_value, dict):
-            key_strings = key_strings.lower().split("::")
-            reduce(operator.getitem, key_strings[:-1], cur_value)[key_strings[-1]] = new_value
+            key_string_split = key_string.lower().split("::")
+            reduce(operator.getitem, key_string_split[:-1], cur_value)[key_string_split[-1]] = new_value
             setattr(self, update_attr, cur_value)
         else:
             setattr(self, update_attr, new_value)
@@ -396,6 +401,34 @@ class Circuit(object):
             key_strings = key_strings.lower().split("::")
             return reduce(operator.getitem, key_strings, cur_value)
         return cur_value
+
+    def visualize(self, placement: Optional[str] = '', cell_place_function: Callable = None, **kwargs):
+        """Visualize the Circuit instance
+
+        :param placement: a string specified the placement of the provided circuit. It will be used only if
+                      cell_place_function is None. :param
+        :param cell_place_function: A callable function, given the cell name, length and width of TBU, return the position of
+                        cell center.
+        :param kwargs: a set of parameters determining the visualization. Accepted parameters including:
+
+        length_width_ratio: The ratio of TBU length over TBU width
+        add_on_ratio: a tuple with two float numbers, the first for length of add-on in the 'TBU width' direction, the
+                         second for length of add-on in the 'TBU length' direction.
+        annotate: a string represents the annotation style.
+        title: the title of the figure.
+        line2d_property: a dictionary with properties accepted by plt.plot()
+        polygon_property: a dictionary with properties accepted by plt.fill()
+
+        """
+
+        if placement == '' and cell_place_function is None:
+            raise RuntimeError("One of 'notation' and 'cell_place_function' should be provided to do visualization.")
+
+        cell_place_function = cell_place_function if cell_place_function is not None else _cell_place_function_list(
+            placement)
+        _visualize_base(self.circuit_element, cell_place_function,
+                        node_signal=self.__node_signal,
+                        node2ind=self.node2ind, **kwargs)
 
 
 if __name__ == '__main__':

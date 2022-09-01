@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from spode.core.solver import Circuit
 from typing import Optional, Union, List, Set, Tuple, Any, Callable, Type
-from spode.util.generator import generate
 from scipy.spatial import ConvexHull
 import matplotlib.colors as mcolors
 
@@ -50,17 +48,16 @@ def _cell_place_function_list(placement: str) -> Callable:
     return cell_place_function
 
 
-def visualize(circuit: Union[dict, Type[Circuit]],
+def visualize(circuit_element: dict,
               placement: Optional[str] = '',
               cell_place_function: Callable = None,
               **kwargs) -> None:
     """Visualize a programmable photonics circuit containing TBUs
 
-    :param circuit: A dictionary contains all TBUs and its connections :param port_magnitude: A np.ndarray of shape (
-                    #nodes, len(omega), 2), it will be used if the 'annotate' variable is specified.
+    :param circuit_element: A dict contains all TBUs and its connections
     :param placement: a string specified the placement of the provided circuit. It will be used only if
                       cell_place_function is None. :param
-    cell_place_function: A callable function, given the cell name, length and width of TBU, return the position of
+    :param cell_place_function: A callable function, given the cell name, length and width of TBU, return the position of
                         cell center.
     :param kwargs: a set of parameters determining the visualization. Accepted parameters including:
 
@@ -79,15 +76,9 @@ def visualize(circuit: Union[dict, Type[Circuit]],
     if placement == '' and cell_place_function is None:
         raise RuntimeError("One of 'notation' and 'cell_place_function' should be provided to do visualization.")
 
-    if isinstance(circuit, Circuit):
-        circuit = circuit.circuit_element
-    elif not isinstance(circuit, dict):
-        raise RuntimeError(
-            "The object being visualized must be a dict containing circuit elements or a Circuit instance.")
-
     cell_place_function = cell_place_function if cell_place_function is not None else _cell_place_function_list(
         placement)
-    _visualize_base(circuit, cell_place_function, **kwargs)
+    _visualize_base(circuit_element, cell_place_function, **kwargs)
 
 
 def _abc_through_two_points(point1: np.ndarray, point2: np.ndarray) -> np.ndarray:
@@ -138,7 +129,7 @@ def _get_two_edges(tbu_length, tbu_width, cell1_center, cell2_center):
     point2 = middle_point + t * direction_vector
 
     # go along the direction perpendicular to the line connecting cell1_center and cell2_center
-    a, b = -direction_vector[1], direction_vector[0]
+    a, b = direction_vector[1], -direction_vector[0]
     t = tbu_length / 2.0 / (a ** 2 + b ** 2) ** 0.5
     edge1 = np.array([point1 + t * np.array([a, b]), point1 - t * np.array([a, b])])
     edge2 = np.array([point2 + t * np.array([a, b]), point2 - t * np.array([a, b])])
@@ -146,27 +137,31 @@ def _get_two_edges(tbu_length, tbu_width, cell1_center, cell2_center):
     return edge1, edge2
 
 
-def _visualize_base(circuit_element: dict, cell_place_func: Callable, **kwargs):
+def _visualize_base(circuit_element: dict, cell_place_func: Callable, node_signal: Optional[np.ndarray] = None,
+                    node2ind: Optional[dict] = None, **kwargs):
     """"A base function for visualization
 
     :param circuit_element: A dictionary contains all TBUs and its connections
+    :param node_signal: An np.ndarray of shape (#nodes, len(omega), 2) contains complex signals at each port.
+    :param node2ind: A dict contains the mapping from node name to node index.
     :param cell_place_func: A callable function, given the cell name, length and width of TBU, return the position of
                             cell center.
     :param kwargs: a set of parameters determining the visualization. Accepted parameters including:
 
-        length_width_ratio: The ratio of TBU length over TBU width
-        add_on_ratio: a tuple with two float numbers, the first for length of add-on in the 'width' direction, the
+        length_width_ratio: a float represents the ratio of TBU length over TBU width
+        add_on_ratio: a tuple with two floats, the first for length of add-on in the 'width' direction, the
                     second for length of add-on in the 'length' direction.
         title: the title of the figure.
         line2d_property: a dictionary with properties accepted by plt.plot()
         polygon_property: a dictionary with properties accepted by plt.fill()
         text_property: a dictionary with properties accepted by plt.text()
+        annotate: a list determined what to display on the figure
     :return: None.
 
     """
 
     if 'length_width_ratio' not in kwargs.keys():
-        length_width_ratio = 0.12
+        length_width_ratio = 0.15
     else:
         length_width_ratio = kwargs['length_width_ratio']
 
@@ -197,7 +192,17 @@ def _visualize_base(circuit_element: dict, cell_place_func: Callable, **kwargs):
 
     annotate = [] if 'annotate' not in kwargs.keys() else kwargs['annotate']
 
-    tbu_lenth = 1
+    freqeuncy_index = -1
+    for cur_annotate in annotate:
+        if isinstance(cur_annotate, dict):
+            for key in cur_annotate.keys():
+                if key == 'all_node':
+                    node_annotate = cur_annotate['all_node']
+                    freqeuncy_index = cur_annotate.get('frequency_index', 0)
+                    filter_function = cur_annotate.get('filter_function', lambda x: np.abs(x) - 0.2 >= 0)
+                    ratio2center = cur_annotate.get('ratio2center', 0.3)
+
+    tbu_lenth = 2
     tbu_width = tbu_lenth * length_width_ratio
 
     ax = plt.figure(figsize=[8, 8])
@@ -230,38 +235,26 @@ def _visualize_base(circuit_element: dict, cell_place_func: Callable, **kwargs):
 
         if 'all_ps_symbol_value' in annotate:
             text1_loc, text2_loc = add_on_edge1.mean(axis=0), add_on_edge2.mean(axis=0)
-            theta_cell_name, phi_cell_name = value['ln'][0].split('_')[1], value['ln'][1].split('_')[1]
+            # theta_cell_name, phi_cell_name = value['ln'][0].split('_')[1], value['ln'][1].split('_')[1]
             plt.text(*text1_loc,
-                     r'$\theta=%.1f\pi$' % (
-                             value['theta'] / np.pi) if theta_cell_name == cell1_name else r'$\phi = %.1f\pi$' % (
-                             value['phi'] / np.pi),
+                     r'$\theta=%.2f\pi$' % (value['theta'] / np.pi),
                      **text_property)
             plt.text(*text2_loc,
-                     r'$\theta=%.1f\pi$' % (
-                             value['theta'] / np.pi) if theta_cell_name == cell2_name else r'$\phi=%.1f\pi$' % (
-                             value['phi'] / np.pi),
+                     r'$\phi=%.2f\pi$' % (value['phi'] / np.pi),
                      **text_property)
 
         if 'all_ps_symbol' in annotate:
             text1_loc, text2_loc = add_on_edge1.mean(axis=0), add_on_edge2.mean(axis=0)
-            theta_cell_name, phi_cell_name = value['ln'][0].split('_')[1], value['ln'][1].split('_')[1]
-            plt.text(*text1_loc,
-                     r'$\theta$' if theta_cell_name == cell1_name else r'$\phi$',
-                     **text_property)
-            plt.text(*text2_loc,
-                     r'$\theta$' if theta_cell_name == cell2_name else r'$\phi$',
-                     **text_property)
+            plt.text(*text1_loc, r'$\theta$', **text_property)
+            plt.text(*text2_loc, r'$\phi$', **text_property)
 
         if 'all_ps_value' in annotate:
             text1_loc, text2_loc = add_on_edge1.mean(axis=0), add_on_edge2.mean(axis=0)
-            theta_cell_name, phi_cell_name = value['ln'][0].split('_')[1], value['ln'][1].split('_')[1]
             plt.text(*text1_loc,
-                     r'$%.1f\pi$' % (value['theta'] / np.pi) if theta_cell_name == cell1_name else r'$%.1f\pi$' % (
-                             value['phi'] / np.pi),
+                     r'$%.2f\pi$' % (value['theta'] / np.pi),
                      **text_property)
             plt.text(*text2_loc,
-                     r'$%.1f\pi$' % (value['theta'] / np.pi) if theta_cell_name == cell2_name else r'$%.1f\pi$' % (
-                             value['phi'] / np.pi),
+                     r'$%.2f\pi$' % (value['phi'] / np.pi),
                      **text_property)
 
         if 'all_cell' in annotate:
@@ -271,21 +264,55 @@ def _visualize_base(circuit_element: dict, cell_place_func: Callable, **kwargs):
         if 'all_tbu_name' in annotate:
             plt.text(*(cell1_center + cell2_center) / 2.0, tbu, **text_property)
 
+        def _convert(src_value):
+            if node_annotate == 'real':
+                return np.real(src_value)
+            if node_annotate == 'imag':
+                return np.imag(src_value)
+            if node_annotate == 'angle':
+                return np.angle(src_value)
+            if node_annotate == 'abs':
+                return np.abs(src_value)
+            if node_annotate == 'complex':
+                return src_value
+
+        def _annotate_node(node_name):
+            index = node2ind[node_name]
+            complex_response = node_signal[freqeuncy_index, [2 * index, 2 * index + 1], 0]
+            ind = np.argmax(np.abs(complex_response))
+            text = _convert(complex_response[ind])
+            # TODO: need some thinking, visualize what? since there are two magnitudes at one port.
+            if node_annotate == 'real':
+                return "{:.2f}".format(text) if filter_function(complex_response[ind]) else ""
+            if node_annotate == 'imag':
+                return "{:.2f}j".format(text) if filter_function(complex_response[ind]) else ""
+            if node_annotate == 'angle':
+                return "{:.1f}pi".format(text / np.pi) if filter_function(complex_response[ind]) else ""
+            if node_annotate == 'abs':
+                return "{:.2f}".format(text) if filter_function(complex_response[ind]) else ""
+            if node_annotate == 'complex':
+                return "{:.2f}".format(text) if filter_function(complex_response[ind]) else ""
+            if node_annotate == 'name':
+                return node_name if filter_function(complex_response[ind]) else ""
+
+        if freqeuncy_index > -1:
+            if node_signal is None or node2ind is None:
+                raise RuntimeError("'node_signal' and 'node2index' must be provided if annotating node response.")
+            if freqeuncy_index > node_signal.shape[1]:
+                raise RuntimeError(
+                    "The frequency index %d is not in the range of [0, %d)" % (freqeuncy_index, node_signal.shape[1]))
+
+            plt.text(*((1 - ratio2center) * edge1[0] + ratio2center * cell1_center), _annotate_node(value['ln'][0]),
+                     **text_property)
+            plt.text(*((1 - ratio2center) * edge2[0] + ratio2center * cell2_center), _annotate_node(value['ln'][1]),
+                     **text_property)
+
+            plt.text(*((1 - ratio2center) * edge1[1] + ratio2center * cell1_center), _annotate_node(value['rn'][0]),
+                     **text_property)
+            plt.text(*((1 - ratio2center) * edge2[1] + ratio2center * cell2_center), _annotate_node(value['rn'][1]),
+                     **text_property)
+
     if title:
         plt.title(title)
 
     plt.show()
-
-
-if __name__ == '__main__':
-    circuit_element = generate('square_1', [3, 2], init_dict={'theta': 0, 'phi': 0.5 * np.pi})
-    visualize(circuit_element, 'square_1', line2d_property={}, polygon_property={},
-              annotate=['all_cell', 'all_ps_symbol'])
-
-    circuit_element = generate('hexagonal_1', [2], init_dict={'theta': 0, 'phi': 0.5 * np.pi})
-    visualize(circuit_element, 'hexagonal_1', line2d_property={}, polygon_property={},
-              annotate=['all_cell', 'all_ps_symbol'])
-
-    circuit_element = generate('triangular_1', [3, 5], init_dict={'theta': 0, 'phi': 0.5 * np.pi})
-    visualize(circuit_element, 'triangular_1', line2d_property={}, polygon_property={},
-              annotate=['all_cell', 'all_ps_symbol'], text_property={})
