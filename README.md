@@ -45,9 +45,9 @@ circuit = Circuit(
                   srce_node={'n_0#2_br': 1.0},
                   prob_node=['n_2#0_br'],
                   deri_node=['n_2#0_br'],
-                  deri_vari=['']) 
+                  deri_vari=['tbum_2#1_2#0_v::theta']) 
                   
-response, grads = circuit.solve() 
+response, grads = circuit.solve(require_grads=True) 
 
 # Shapes by pseudo code:
 # response.shape = (len(prob_node), len(omega), 2)
