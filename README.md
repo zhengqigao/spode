@@ -68,3 +68,34 @@ response, grads = circuit.solve(require_grads=True)
 ## Contact and Bug Report
 
 If you find any bugs, or want a new feature, please open an issue, or contact me at zhengqi@mit.edu.
+
+## Cite
+
+Please cite the following papers if you find the package is helpful in your research. 
+
+@article{gao2023automatic,
+  title={Automatic synthesis of light-processing functions for programmable photonics: theory and realization},
+  author={Gao, Zhengqi and Chen, Xiangfeng and Zhang, Zhengxing and Chakraborty, Uttara and Bogaerts, Wim and Boning, Duane S},
+  journal={Photonics Research},
+  volume={11},
+  number={4},
+  pages={643--658},
+  year={2023},
+  publisher={Optica Publishing Group}
+}
+
+@article{gao2024provable,
+  title={Provable Routing Analysis of Programmable Photonic Circuits},
+  author={Gao, Zhengqi and Chen, Xiangfeng and Zhang, Zhengxing and Lai, Chih-Yu and Chakraborty, Uttara and Bogaerts, Wim and Boning, Duane S},
+  journal={Journal of Lightwave Technology},
+  year={2024},
+  publisher={IEEE}
+}
+
+@article{gao2024gradient,
+  title={Gradient-Based Power Efficient Functional Synthesis for Programmable Photonic Circuits},
+  author={Gao, Zhengqi and Chen, Xiangfeng and Zhang, Zhengxing and Chakraborty, Uttara and Bogaerts, Wim and Boning, Duane S},
+  journal={Journal of Lightwave Technology},
+  year={2024},
+  publisher={IEEE}
+}
