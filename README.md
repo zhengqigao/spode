@@ -73,6 +73,7 @@ If you find any bugs, or want a new feature, please open an issue, or contact me
 
 Please cite the following papers if you find the package is helpful in your research. 
 
+```bibtex
 @article{gao2023automatic,
   title={Automatic synthesis of light-processing functions for programmable photonics: theory and realization},
   author={Gao, Zhengqi and Chen, Xiangfeng and Zhang, Zhengxing and Chakraborty, Uttara and Bogaerts, Wim and Boning, Duane S},
